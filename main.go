@@ -8,16 +8,21 @@ import (
 	"time"
 )
 
-const day = 24  // Day duration in hours
+type paths []path
+type path struct {
+	Path         string  `json:"path"`
+	DaysToDelete float64 `json:"days_to_delete"`
+	SafeDelete   bool    `json:"safe_delete"`
+}
+
+const day = 24 // Day duration in hours
+const configFile = "dof.json"
+
+var conf []path
 
 func main() {
-	confPath := []string{
-		filepath.FromSlash("/home/sebiitta/Gitlab 2 - Seba 0.png"),
-		filepath.FromSlash("/tmp/prueba/**"),
-	}
-
-	for _, cp := range confPath {
-		files, err := filepath.Glob(cp)
+	for _, cp := range conf {
+		files, err := filepath.Glob(filepath.FromSlash(cp.Path))
 		if err != nil {
 			panic(err)
 		}
@@ -28,7 +33,16 @@ func main() {
 				panic(err)
 			}
 
-			fmt.Printf("Ultimo acceso > 2 dias: %v ----> Path: %s\n", time.Since(time.Unix(fInfo.Sys().(*syscall.Stat_t).Atim.Unix())).Hours() > 2*day, f)
+			lastAccess := time.Unix(fInfo.Sys().(*syscall.Stat_t).Atim.Unix())
+			fmt.Printf("Ultimo acceso > %.0f dias: %v ----> Path: %s\n",
+				cp.DaysToDelete, time.Since(lastAccess).Hours() > cp.DaysToDelete*day, f)
+
+			if time.Since(lastAccess).Hours() > cp.DaysToDelete*day {
+				err = os.Remove(f)
+				if err != nil {
+					fmt.Printf("No se pudo eliminar el archivo %s", f)
+				}
+			}
 		}
 	}
 }
