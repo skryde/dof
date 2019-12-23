@@ -18,7 +18,7 @@ type path struct {
 const day = 24 // Day duration in hours
 const configFile = "dof.json"
 
-var conf []path
+var conf paths
 
 func main() {
 	for _, cp := range conf {
